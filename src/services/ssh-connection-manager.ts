@@ -1,6 +1,10 @@
 import { Client, ClientChannel } from "ssh2";
 import { SocksClient } from "socks";
-import { SSHConfig, SshConnectionConfigMap, ServerStatus } from "../models/types.js";
+import {
+  SSHConfig,
+  SshConnectionConfigMap,
+  ServerStatus,
+} from "../models/types.js";
 import { Logger } from "../utils/logger.js";
 import { collectSystemStatus } from "../utils/status-collector.js";
 import fs from "fs";
@@ -35,7 +39,7 @@ export class SSHConnectionManager {
    */
   public setConfig(
     configs: SshConnectionConfigMap,
-    defaultName?: string
+    defaultName?: string,
   ): void {
     this.configs = configs;
     if (defaultName && configs[defaultName]) {
@@ -80,7 +84,7 @@ export class SSHConnectionManager {
       client.on("ready", () => {
         this.connected.set(key, true);
         Logger.log(
-          `Successfully connected to SSH server [${key}] ${config.host}:${config.port}`
+          `Successfully connected to SSH server [${key}] ${config.host}:${config.port}`,
         );
 
         // 先 resolve，让用户命令可以立即执行
@@ -93,15 +97,12 @@ export class SSHConnectionManager {
           collectSystemStatus(client, key)
             .then((status) => {
               this.statusCache.set(key, status);
-              Logger.log(
-                `System status collected for [${key}]`,
-                "info"
-              );
+              Logger.log(`System status collected for [${key}]`, "info");
             })
             .catch((error) => {
               Logger.log(
                 `Failed to collect system status for [${key}]: ${(error as Error).message}`,
-                "error"
+                "error",
               );
               // Set basic status even if collection fails
               this.statusCache.set(key, {
@@ -134,7 +135,7 @@ export class SSHConnectionManager {
 
           Logger.log(
             `Using SOCKS proxy for [${key}]: ${config.socksProxy}`,
-            "info"
+            "info",
           );
 
           // Create SOCKS connection
@@ -156,17 +157,17 @@ export class SSHConnectionManager {
           Logger.log(
             `SSH config object with SOCKS proxy: ${JSON.stringify(
               sshConfig,
-              (k, v) => (k === "sock" ? "[Socket object]" : v)
+              (k, v) => (k === "sock" ? "[Socket object]" : v),
             )}`,
-            "info"
+            "info",
           );
         } catch (err) {
           return reject(
             new Error(
               `Failed to create SOCKS proxy connection for [${key}]: ${
                 (err as Error).message
-              }`
-            )
+              }`,
+            ),
           );
         }
       }
@@ -178,15 +179,15 @@ export class SSHConnectionManager {
           }
           Logger.log(
             `Using SSH private key authentication for [${key}]`,
-            "info"
+            "info",
           );
         } catch (err) {
           return reject(
             new Error(
               `Failed to read private key file for [${key}]: ${
                 (err as Error).message
-              }`
-            )
+              }`,
+            ),
           );
         }
       } else if (config.password) {
@@ -195,8 +196,8 @@ export class SSHConnectionManager {
       } else {
         return reject(
           new Error(
-            `No valid authentication method provided for [${key}] (password or private key)`
-          )
+            `No valid authentication method provided for [${key}] (password or private key)`,
+          ),
         );
       }
       client.connect(sshConfig);
@@ -234,7 +235,7 @@ export class SSHConnectionManager {
 
   private validateCommand(
     command: string,
-    name?: string
+    name?: string,
   ): { isAllowed: boolean; reason?: string } {
     const config = this.getConfig(name);
     // Check whitelist (if whitelist is configured, command must match one of the patterns to be allowed)
@@ -275,7 +276,7 @@ export class SSHConnectionManager {
   public async executeCommand(
     cmdString: string,
     name?: string,
-    options: { timeout?: number } = {}
+    options: { timeout?: number } = {},
   ): Promise<string> {
     // Validate command input and security
     const validationResult = this.validateCommand(cmdString, name);
@@ -302,6 +303,8 @@ export class SSHConnectionManager {
       // Execute command via SSH exec
       client.exec(
         cmdString,
+        // allocate a pseudo-tty
+        { pty: true },
         (err: Error | undefined, stream: ClientChannel) => {
           // Handle immediate execution errors
           if (err) {
@@ -318,7 +321,7 @@ export class SSHConnectionManager {
           stream.on("data", (chunk: Buffer) => (data += chunk.toString())); // Collect stdout data
           stream.stderr.on(
             "data",
-            (chunk: Buffer) => (errorData += chunk.toString()) // Collect stderr data
+            (chunk: Buffer) => (errorData += chunk.toString()), // Collect stderr data
           );
 
           // Handle command completion and exit code
@@ -342,7 +345,7 @@ export class SSHConnectionManager {
               // Ignore errors when closing streams during timeout
             }
           }, timeout);
-        }
+        },
       );
     });
   }
@@ -355,7 +358,7 @@ export class SSHConnectionManager {
     const workingDir = process.cwd();
     if (!resolvedPath.startsWith(workingDir)) {
       throw new Error(
-        `Path traversal detected. Local path must be within the working directory.`
+        `Path traversal detected. Local path must be within the working directory.`,
       );
     }
     return resolvedPath;
@@ -367,7 +370,7 @@ export class SSHConnectionManager {
   public async upload(
     localPath: string,
     remotePath: string,
-    name?: string
+    name?: string,
   ): Promise<string> {
     const validatedLocalPath = this.validateLocalPath(localPath);
     const client = await this.ensureConnected(name);
@@ -411,7 +414,7 @@ export class SSHConnectionManager {
   public async download(
     remotePath: string,
     localPath: string,
-    name?: string
+    name?: string,
   ): Promise<string> {
     const validatedLocalPath = this.validateLocalPath(localPath);
     const client = await this.ensureConnected(name);
