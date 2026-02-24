@@ -5,10 +5,11 @@ import { SSHConnectionManager } from "../services/ssh-connection-manager.js";
  * Register list-servers tool
  */
 export function registerListServersTool(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     "list-servers",
-    "List all available SSH server configurations",
-    {},
+    {
+      description: "List all available SSH server configurations",
+    },
     async () => {
       const sshManager = SSHConnectionManager.getInstance();
       const servers = sshManager.getAllServerInfos();

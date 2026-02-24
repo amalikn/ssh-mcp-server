@@ -9,13 +9,15 @@ import { Logger } from "../utils/logger.js";
 export function registerUploadTool(server: McpServer): void {
   const sshManager = SSHConnectionManager.getInstance();
 
-  server.tool(
+  server.registerTool(
     "upload",
-    "Upload file to connected server",
     {
-      localPath: z.string().describe("Local path"),
-      remotePath: z.string().describe("Remote path"),
-      connectionName: z.string().optional().describe("SSH connection name (optional, default is 'default')"),
+      description: "Upload file to connected server",
+      inputSchema: {
+        localPath: z.string().describe("Local path"),
+        remotePath: z.string().describe("Remote path"),
+        connectionName: z.string().optional().describe("SSH connection name (optional, default is 'default')"),
+      },
     },
     async ({ localPath, remotePath, connectionName }) => {
       try {

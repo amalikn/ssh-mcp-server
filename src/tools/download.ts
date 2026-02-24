@@ -9,13 +9,15 @@ import { Logger } from "../utils/logger.js";
 export function registerDownloadTool(server: McpServer): void {
   const sshManager = SSHConnectionManager.getInstance();
 
-  server.tool(
+  server.registerTool(
     "download",
-    "Download file from connected server",
     {
-      remotePath: z.string().describe("Remote path"),
-      localPath: z.string().describe("Local path"),
-      connectionName: z.string().optional().describe("SSH connection name (optional, default is 'default')"),
+      description: "Download file from connected server",
+      inputSchema: {
+        remotePath: z.string().describe("Remote path"),
+        localPath: z.string().describe("Local path"),
+        connectionName: z.string().optional().describe("SSH connection name (optional, default is 'default')"),
+      },
     },
     async ({ remotePath, localPath, connectionName }) => {
       try {
